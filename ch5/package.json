@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "express": "^4.21.2",
+    "http": "^0.0.1-security",
+    "sockjs": "^0.3.24",
+    "uuid": "^11.0.5"
+  }
+}
