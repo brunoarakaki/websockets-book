@@ -59,7 +59,13 @@
 		function appendLog(nickname, message) {
 			var messages = document.getElementById('messages');
 			var messageElem = document.createElement("li");
-			var message_text = "[" + nickname + "] - " + message;
+			var preface_label;
+			if (nickname === '*') {
+				preface_label = "<span class=\"badge text-bg-info\">*</span>";
+			} else {
+				preface_label = "<span class=\"badge text-bg-success\">" + nickname + "</span>";
+			}
+			var message_text = "<h2>" + preface_label + "&nbsp;&nbsp;" + message + "</h2>";
 			messageElem.innerHTML = message_text;
 			messages.appendChild(messageElem);
 		}
