@@ -19,10 +19,6 @@ const pusher = new Pusher({
 	useTLS: true
 });
 
-pusher.trigger("my-channel", "my-event", {
-	message: "hello world"
-});
-
 console.log("Server started");
 
 var clients = [];
@@ -47,6 +43,7 @@ app.post("/nickname", function(req, res) {
 		nickname,
 		old_nick + " changed nickname to " + nickname);
 
+	console.log('Client ' + old_nick + ' changed nickname to ' + nickname);
 	res.status(200).send('');
 });
 
@@ -59,6 +56,7 @@ app.post("/login", function(_req, res) {
 		'id': client_uuid,
 		'nickname': nickname
 	};
+	console.log('Client connected: ' + nickname);
 	res.status(200).send(
 		JSON.stringify(clients[client_uuid])
 	);
@@ -71,6 +69,7 @@ app.post("/chat", function(req, res) {
 		clients[req.body.id].nickname,
 		req.body.message
 	);
+	console.log('Client ' + clients[req.body.id].nickname + ' sent message: ' + req.body.message);
 	res.status(200).send("");
 });
 
