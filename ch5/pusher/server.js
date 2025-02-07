@@ -1,64 +1,78 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import bodyParser from 'body-parser';
 import http from 'http';
-import { Server } from 'socket.io'
+import Pusher from 'pusher';
 
 console.log("Starting server");
 
 const app = express();
+app.use(bodyParser.json());
 const httpServer = http.createServer(app);
-const io = new Server(httpServer);
+
+
+const pusher = new Pusher({
+	appId: "appId",
+	key: "key",
+	secret: "secret",
+	cluster: "eu",
+	useTLS: true
+});
+
+pusher.trigger("my-channel", "my-event", {
+	message: "hello world"
+});
 
 console.log("Server started");
 
 var clients = [];
+var clientIndex = 1
 
-function wsSend(type, client_uuid, nickname, message) {
-	for (var i = 0; i < clients.length; i++) {
-		var clientSocket = clients[i].connection;
-		clientSocket.emit(type, {
-			id: client_uuid,
-			nickname: nickname,
-			message: message
-		});
-	}
-}
-
-io.on('connection', function(conn) {
-	var client_uuid = uuidv4();
-	var nickname = client_uuid.substr(0, 8);
-	clients.push({ "id": client_uuid, "connection": conn, "nickname": nickname });
-	console.log('client [%s] connected', client_uuid);
-
-	var connect_message = nickname + " has connected";
-	wsSend("notification", client_uuid, nickname, connect_message);
-
-
-	conn.on('message', function(message) {
-		console.log(message)
-		wsSend("message", client_uuid, nickname, message);
+function sendMessage(type, client_uuid, nickname, message) {
+	pusher.trigger('chat', type, {
+		"id": client_uuid,
+		"nickname": nickname,
+		"message": message
 	});
+};
 
-	conn.on('nickname', function(nick) {
-		console.log(nick);
-		const old_nickname = nickname;
-		nickname = nick.nickname;
-		var nickname_message = 'Client ' + old_nickname + ' changed to ' + nickname;
-		wsSend("nickname", client_uuid, nickname, nickname_message);
-	});
+app.post("/nickname", function(req, res) {
+	var old_nick = clients[req.body.id].nickname;
 
-	conn.on('disconnect', function() {
-		for (var i = 0; i < clients.length; i++) {
-			if (clients[i].id == client_uuid) {
-				var disconnect_message = nickname + " has disconnected";
-				wsSend("notification", client_uuid, nickname, disconnect_message);
-				clients.splice(i, 1);
-			}
-		}
-	});
+	var nickname = req.body.nickname;
+	clients[req.body.id].nickname = nickname;
 
+	sendMessage('nickname',
+		req.body.id,
+		nickname,
+		old_nick + " changed nickname to " + nickname);
 
-})
+	res.status(200).send('');
+});
+
+app.post("/login", function(_req, res) {
+	const client_uuid = uuidv4();
+	const nickname = "AnonymousUser" + clientIndex;
+	clientIndex += 1;
+
+	clients[client_uuid] = {
+		'id': client_uuid,
+		'nickname': nickname
+	};
+	res.status(200).send(
+		JSON.stringify(clients[client_uuid])
+	);
+});
+
+app.post("/chat", function(req, res) {
+	sendMessage(
+		'message',
+		req.body.id,
+		clients[req.body.id].nickname,
+		req.body.message
+	);
+	res.status(200).send("");
+});
 
 console.log(' [*] Listening on 0.0.0.0:8181');
 httpServer.listen(8181, '0.0.0.0');

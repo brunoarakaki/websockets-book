@@ -1,8 +1,9 @@
 {
   "dependencies": {
+    "body-parser": "^1.20.3",
     "express": "^4.21.2",
     "http": "^0.0.1-security",
-    "socket.io": "^4.8.1",
+    "pusher": "^5.2.0",
     "sockjs": "^0.3.24",
     "uuid": "^11.0.5"
   }
